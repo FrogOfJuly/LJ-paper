@@ -1,0 +1,53 @@
+\documentclass[a4paper]{article}
+
+\usepackage{verbatim}
+\usepackage{hyperref} 
+\hypersetup{bookmarksopen=true, bookmarksopenlevel=0,linkcolor={blue}}
+
+\usepackage[backend=biber,style=numeric]{biblatex}
+
+\usepackage{bussproofs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{multicol}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{nameref}
+\usepackage{graphicx}
+
+\usepackage{listings}
+\usepackage{listings-rust}
+
+\lstset{
+    tabsize = 4, %% set tab space width
+    showstringspaces = false,
+    numbers = left, %% display line numbers on the left
+    commentstyle = \color{orange}, %% set comment color
+    keywordstyle = \color{blue}, %% set keyword color
+    stringstyle = \color{red}, %% set string color
+    rulecolor = \color{black}, %% set frame color to avoid being affected by text color
+    basicstyle = \footnotesize	\ttfamily, %% set listing font and size
+    breaklines = true, %% enable line breaking
+    numberstyle = \tiny,
+}
+\addbibresource{main.bib}  
+
+\title{Title}
+\author{Kirill Golubev}
+\date{\today} 
+
+\begin{document}
+
+    \maketitle
+
+    \tableofcontents
+
+    \include{chapters/introduction}
+
+    % Other chapters
+
+    \include{chapters/summary}
+
+    \printbibliography % bibliography
+
+\end{document}
