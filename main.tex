@@ -38,16 +38,22 @@
 
 \begin{document}
 
+\begin{abstract}
+Separation logic is used in many tools to ensure the correctness of software. One of the main techniques to automatically reason about code is symbolic execution which keeps some logical state and automatically proves transitions of said state by querying the SMT solver. Usually, this solver is a Z3 solver, which does not support reasoning with separation logic. Little to no research is done on how the usage of native separation logic support in SMT solver, such as CVC5 solver, can benefit these tools. This work is aimed to fill this gap by providing proof of concept encoding for frame rule through SMT queries in the "symbolic heap" fragment of separation logic. It is concluded that such encoding can greatly simplify machinery dealing with separation logic in such tools as Viper, Smallfoot, and others.
+\end{abstract}
+
     \maketitle
 
     \tableofcontents
 
-    \include{chapters/introduction}
+    \include{sections/introduction}
 
     % Other chapters
 
-    \include{chapters/summary}
+    \include{sections/summary}
 
-    \printbibliography % bibliography
+    % bibliography
+
+    \printbibliography
 
 \end{document}
