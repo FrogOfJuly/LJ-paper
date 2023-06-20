@@ -1,59 +1,248 @@
-\documentclass[a4paper]{article}
+%%
+%% This is file `sample-sigplan.tex',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% samples.dtx  (with options: `sigplan')
+%%
+%% IMPORTANT NOTICE:
+%%
+%% For the copyright see the source file.
+%%
+%% Any modified versions of this file must be renamed
+%% with new filenames distinct from sample-sigplan.tex.
+%%
+%% For distribution of the original source see the terms
+%% for copying and modification in the file samples.dtx.
+%%
+%% This generated file may be distributed as long as the
+%% original source files, as listed above, are part of the
+%% same distribution. (The sources need not necessarily be
+%% in the same archive or directory.)
+%%
+%%
+%% Commands for TeXCount
+%TC:macro \cite [option:text,text]
+%TC:macro \citep [option:text,text]
+%TC:macro \citet [option:text,text]
+%TC:envir table 0 1
+%TC:envir table* 0 1
+%TC:envir tabular [ignore] word
+%TC:envir displaymath 0 word
+%TC:envir math 0 word
+%TC:envir comment 0 0
+%%
+%%
+%% The first command in your LaTeX source must be the \documentclass
+%% command.
+%%
+%% For submission and review of your manuscript please change the
+%% command to \documentclass[manuscript, screen, review]{acmart}.
+%%
+%% When submitting camera ready or to TAPS, please change the command
+%% to \documentclass[sigconf]{acmart} or whichever template is required
+%% for your publication.
+%%
+%%
 
-\usepackage{verbatim}
-\usepackage{hyperref} 
-\hypersetup{bookmarksopen=true, bookmarksopenlevel=0,linkcolor={blue}}
+\documentclass[sigplan,screen,review]{acmart}
 
-\usepackage[backend=biber,style=numeric]{biblatex}
+\usepackage{paper_alcides}
+\usepackage{cleveref}
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{positioning}
+\usepgfplotslibrary{fillbetween}
+\usepgflibrary{patterns}
+\usetikzlibrary{patterns}
+%%
+%% \BibTeX command to typeset BibTeX logo in the docs
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    Bib\TeX}}}
 
-\usepackage{bussproofs}
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{multicol}
-\usepackage{color}
-\usepackage{xcolor}
-\usepackage{nameref}
-\usepackage{graphicx}
+%% Rights management information.  This information is sent to you
+%% when you complete the rights form.  These commands have SAMPLE
+%% values in them; it is your responsibility as an author to replace
+%% the commands and values with those provided to you when you
+%% complete the rights form.
+\setcopyright{acmcopyright}
+\copyrightyear{2018}
+\acmYear{2018}
+\acmDOI{XXXXXXX.XXXXXXX}
 
-\usepackage{listings}
-\usepackage{listings-rust}
+%% These commands are for a PROCEEDINGS abstract or paper.
+\acmConference[Conference acronym 'XX]{Make sure to enter the correct
+  conference title from your rights confirmation emai}{June 03--05,
+  2018}{Woodstock, NY}
+%%
+%%  Uncomment \acmBooktitle if the title of the proceedings is different
+%%  from ``Proceedings of ...''!
+%%
+%%\acmBooktitle{Woodstock '18: ACM Symposium on Neural Gaze Detection,
+%%  June 03--05, 2018, Woodstock, NY}
+\acmPrice{15.00}
+\acmISBN{978-1-4503-XXXX-X/18/06}
 
-\lstset{
-    tabsize = 4, %% set tab space width
-    showstringspaces = false,
-    numbers = left, %% display line numbers on the left
-    commentstyle = \color{orange}, %% set comment color
-    keywordstyle = \color{blue}, %% set keyword color
-    stringstyle = \color{red}, %% set string color
-    rulecolor = \color{black}, %% set frame color to avoid being affected by text color
-    basicstyle = \footnotesize	\ttfamily, %% set listing font and size
-    breaklines = true, %% enable line breaking
-    numberstyle = \tiny,
-}
-\addbibresource{main.bib}  
 
-\title{Title}
-\author{Kirill Golubev}
-\date{\today} 
+%%
+%% Submission ID.
+%% Use this when submitting an article to a sponsored event. You'll
+%% receive a unique submission ID from the organizers
+%% of the event, and this ID should be used as the parameter to this command.
+%%\acmSubmissionID{123-A56-BU3}
 
+%%
+%% For managing citations, it is recommended to use bibliography
+%% files in BibTeX format.
+%%
+%% You can then either use BibTeX with the ACM-Reference-Format style,
+%% or BibLaTeX with the acmnumeric or acmauthoryear sytles, that include
+%% support for advanced citation of software artefact from the
+%% biblatex-software package, also separately available on CTAN.
+%%
+%% Look at the sample-*-biblatex.tex files for templates showcasing
+%% the biblatex styles.
+%%
+
+%%
+%% The majority of ACM publications use numbered citations and
+%% references.  The command \citestyle{authoryear} switches to the
+%% "author year" style.
+%%
+%% If you are preparing content for an event
+%% sponsored by ACM SIGGRAPH, you must use the "author year" style of
+%% citations and references.
+%% Uncommenting
+%% the next command will enable that style.
+%%\citestyle{acmauthoryear}
+
+
+%%
+%% end of the preamble, start of the body of the document source.
 \begin{document}
 
+%%
+%% The "title" command has an optional parameter,
+%% allowing the author to define a "short title" to be used in page headers.
+\title{Implementing Separation Logic using an SMT-backed Frame Rule}
+
+%%
+%% The "author" command and its associated commands are used to define
+%% the authors and their affiliations.
+%% Of note is the shared affiliation of the first two authors, and the
+%% "authornote" and "authornotemark" commands
+%% used to denote shared contribution to the research.
+\author{Kirill Golubev}
+%\email{trovato@corporation.com}
+% TODO: \orcid{1234-5678-9012}
+\author{Alcides Fonseca}
+\email{alcides@ciencias.ulisboa.pt}
+\orcid{0000-0002-0879-4015}
+\affiliation{%
+  \institution{LASIGE, Faculdade de Ciências da Universidade de Lisboa}
+  \city{Lisboa}
+  \country{Portugal}
+}
+
+%%
+%% The abstract is a short summary of the work to be presented in the
+%% article.
 \begin{abstract}
-Separation logic is used in many tools to ensure the correctness of software. One of the main techniques to automatically reason about code is symbolic execution which keeps some logical state and automatically proves transitions of said state by querying the SMT solver. Usually, this solver is a Z3 solver, which does not support reasoning with separation logic. Little to no research is done on how the usage of native separation logic support in SMT solver, such as CVC5 solver, can benefit these tools. This work is aimed to fill this gap by providing proof of concept encoding for frame rule through SMT queries in the "symbolic heap" fragment of separation logic. It is concluded that such encoding can greatly simplify machinery dealing with separation logic in such tools as Viper, Smallfoot, and others.
+
+Symbolic execution is a technique frequently used to reason about code. In symbolic execution, the analyser keeps track of a logical representation of state, and correctness verifications are SMT queries. Separation logic is frequently used to express and verify properties of programs with pointers or references. However, most SMT solvers (like the popular z3) do not support Separation Logic natively. CVC5 has introduced partial support for separation logic, which has not yet been integrated into a more high-level tools.
+
+This work aims to address this gap, by providing a proof of concept for implementing the Frame Rule using SMT queries in the Symbolic Heap fragment of separation logic, supported by CVC5. We conclude that this encoding can simplify the machinery dealing with separation logic, such as that present in Viper, Smallfoot, and others.
+
 \end{abstract}
 
-    \maketitle
+%%
+%% The code below is generated by the tool at http://dl.acm.org/ccs.cfm.
+%% Please copy and paste the code instead of the example below.
+%%
+\begin{CCSXML}
+<ccs2012>
+ <concept>
+  <concept_id>10010520.10010553.10010562</concept_id>
+  <concept_desc>Computer systems organization~Embedded systems</concept_desc>
+  <concept_significance>500</concept_significance>
+ </concept>
+ <concept>
+  <concept_id>10010520.10010575.10010755</concept_id>
+  <concept_desc>Computer systems organization~Redundancy</concept_desc>
+  <concept_significance>300</concept_significance>
+ </concept>
+ <concept>
+  <concept_id>10010520.10010553.10010554</concept_id>
+  <concept_desc>Computer systems organization~Robotics</concept_desc>
+  <concept_significance>100</concept_significance>
+ </concept>
+ <concept>
+  <concept_id>10003033.10003083.10003095</concept_id>
+  <concept_desc>Networks~Network reliability</concept_desc>
+  <concept_significance>100</concept_significance>
+ </concept>
+</ccs2012>
+\end{CCSXML}
 
-    \tableofcontents
+\ccsdesc[500]{Computer systems organization~Embedded systems}
+\ccsdesc[300]{Computer systems organization~Redundancy}
+\ccsdesc{Computer systems organization~Robotics}
+\ccsdesc[100]{Networks~Network reliability}
 
-    \include{sections/introduction}
 
-    % Other chapters
+\received{20 February 2007}
+\received[revised]{12 March 2009}
+\received[accepted]{5 June 2009}
 
-    \include{sections/summary}
+%%
+%% This command processes the author and affiliation and title
+%% information and builds the first part of the formatted document.
+\maketitle
 
-    % bibliography
 
-    \printbibliography
+\newcommand{\EM}[1]{\ensuremath{#1}}
+\newcommand{\ssymbol}[1]{\EM{#1}}
+\newcommand{\bnfdef}{\EM{\vcentcolon\vcentcolon=}}
+\newcommand{\emphbf}[1]{\textbf{\emph{#1}}}
+\newcommand{\spmid}{\EM{\ \mid \ }}
+\newcommand{\vsample}[1]{\EM{\mathit{sample}(#1)}}
+\newcommand{\vconst}{\EM{\mathsf{c}}}
+\newcommand{\anyval}{\ssymbol{v}}
+\newcommand{\anydist}{\ssymbol{d}}
+\newcommand{\dnormal}[2]{\EM{\mathit{Normal}(#1,#2)}}
+\newcommand{\duniform}[2]{\EM{\mathit{Uniform}(#1,#2)}}
+
+
+\section{Introduction}
+
+\todo{Introduce the topic of Program Verification.}
+
+\todo{Introduce the topic of Separation Logic}
+
+\todo{Mention tools that use separation logic, and describe how they are encoded.}
+
+\todo{Describe the partial support of SL in CVC5, and identify that z3 has no such support.}
+
+\todo{Describe the goal and contribution of this paper.}
+
+\section{Frame Rule}
+
+\todo{Describe the algorithm and how it works.}
+
+
+\section{Conclusions}
+
+\todo{Describe how this can be used in other contexts, and what is the advantage.}
+
+
+
+\bibliographystyle{acm}
+\bibliography{main}
 
 \end{document}
+\endinput
+%%
+%% End of file `sample-sigplan.tex'.
