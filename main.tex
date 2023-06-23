@@ -57,6 +57,9 @@
 \usepgfplotslibrary{fillbetween}
 \usepgflibrary{patterns}
 \usetikzlibrary{patterns}
+
+\usepackage{bussproofs}
+\usepackage{listings}
 %%
 %% \BibTeX command to typeset BibTeX logo in the docs
 \AtBeginDocument{%
@@ -156,6 +159,8 @@ Symbolic execution is a technique frequently used to reason about code. In symbo
 
 This work aims to address this gap, by providing a proof of concept for implementing the Frame Rule using SMT queries in the Symbolic Heap fragment of separation logic, supported by CVC5. We conclude that this encoding can simplify the machinery dealing with separation logic, such as that present in Viper, Smallfoot, and others.
 
+\todo {Viper is a debatable example, as it does not use separation logic internally. Instead it relies on more powerful mechanism of Implicit Dynamic Frames.}
+
 \end{abstract}
 
 %%
@@ -215,8 +220,7 @@ This work aims to address this gap, by providing a proof of concept for implemen
 \newcommand{\dnormal}[2]{\EM{\mathit{Normal}(#1,#2)}}
 \newcommand{\duniform}[2]{\EM{\mathit{Uniform}(#1,#2)}}
 
-
-\section{Introduction}
+\section{Introduction} 
 
 \todo{Introduce the topic of Program Verification.}
 
@@ -226,18 +230,63 @@ This work aims to address this gap, by providing a proof of concept for implemen
 
 \todo{Describe the partial support of SL in CVC5, and identify that z3 has no such support.}
 
-\todo{Describe the goal and contribution of this paper.}
+The goal of the present work is to provide an opportunity to shift some heavy lifting related to separation logic from a symbolic execution engine to an SMT solver. 
+
+This is done by means of providing an algorithm to encode the frame rule through SMT solver queries. 
+
 
 \section{Frame Rule}
 
-\todo{Describe the algorithm and how it works.}
+The algorithm uses the notion of SMT query that is denoted as follows.
 
+\[
+\texttt{isUNSAT($\neg$query) = true,}
+\]
+
+iff an SMT solver gives the UNSAT result on the negation of the query. This means that for all free variables negation of the query does not hold, which is equivalent to the situation when the query holds for all free variables. 
+
+\begin{prooftree}
+    \AxiomC{\texttt{\{pre\} code \{post\}}}
+    \UnaryInfC{\texttt{\{pre * frame\} code \{post * frame\}}}
+\end{prooftree}
+
+The algorithm itself is split into two phases. 
+
+\begin{itemize}
+    \item Check if the current context satisfies the precondition
+    \item Apply postcondition to the larger context
+\end{itemize}
+
+Pseudocode for the first phase is quite simple. It exploits the idea, that it is possible to encode a heap containing any given one by adding \texttt{* true} to it. 
+
+The outline is that during the first step, it checks if the boolean context, defining pointer equivalence, and the heap imply precondition.
+
+\begin{lstlisting}[mathescape]
+BCtx | H $\Vdash$ pre 
+ $iff$ isUNSAT($\neg$(BCtx $\land$ H $\implies$ pre * true))
+\end{lstlisting}
+
+The second phase exploits the same idea. The frame is inferred by checking each pointer for belonging in a frame, by precondition invalidation.
+
+\begin{lstlisting}[mathescape]
+H = h$_0$ * $\dots$ * h$_{n - 1}$ //larger context
+frame = H.map($\lambda$ h. pre * h * true)
+            .filter($\lambda$ c. BCtx | H $\Vdash$ c)
+            .fold(emp, *)
+
+\end{lstlisting}
+
+The unfortunate consequence of this approach is a performance hit. Usually, the systems that are using SMT solvers need only \texttt{O(1)} SMT queries to make the symbolic execution step, but this algorithm does it in \texttt{O(size(H))} queries. 
+
+If examined more closely, this algorithm is not doing frame rule application, but rather heap reconstruction. It will discard every heaplet that invalidates precondition and the remainder will be the result. This makes it possible to use it for other purposes with slight variations. For example, for merging heaps after branching branches. 
 
 \section{Conclusions}
 
-\todo{Describe how this can be used in other contexts, and what is the advantage.}
+The primary target of this algorithm is Liquid Java, but it is general enough to be used in other projects relying on SMT solvers to verify symbolic execution steps. The primary benefit of this algorithm is simplicity and delegation of responsibility for separation logic handling to the SMT solver instead of a symbolic execution engine which is usually implemented separately for each tool. 
 
+We implemented and tested this algorithm for Liquid Java, preliminary results are encouraging feature- and performance-wise. 
 
+The performance degradation for synthetic benchmarks is around 30\% relative to the pure boolean version.
 
 \bibliographystyle{acm}
 \bibliography{main}
