@@ -226,9 +226,17 @@ This work aims to address this gap, by providing a proof of concept for implemen
 
 \todo{Introduce the topic of Separation Logic}
 
-\todo{Mention tools that use separation logic, and describe how they are encoded.}
+\todo{Symbolic heap}
+
+\todo{GRASS}
+
+\todo{Mention tools that use separation logic, and 
+describe how they are encoded.}
+
+\todo{SMT solver as an Oracle}
 
 \todo{Describe the partial support of SL in CVC5, and identify that z3 has no such support.}
+
 
 The goal of the present work is to provide an opportunity to shift some heavy lifting related to separation logic from a symbolic execution engine to an SMT solver. 
 
@@ -236,6 +244,8 @@ This is done by means of providing an algorithm to encode the frame rule through
 
 
 \section{Frame Rule}
+
+
 
 The algorithm uses the notion of SMT query that is denoted as follows.
 
@@ -278,15 +288,19 @@ frame = H.map($\lambda$ h. pre * h * true)
 
 The unfortunate consequence of this approach is a performance hit. Usually, the systems that are using SMT solvers need only \texttt{O(1)} SMT queries to make the symbolic execution step, but this algorithm does it in \texttt{O(size(H))} queries. 
 
-If examined more closely, this algorithm is not doing frame rule application, but rather heap reconstruction. It will discard every heaplet that invalidates precondition and the remainder will be the result. This makes it possible to use it for other purposes with slight variations. For example, for merging heaps after branching branches. 
+If examined more closely, this algorithm is not exactly doing frame rule application, but rather heap reconstruction. It will discard every heaplet that invalidates precondition and the remainder will be the result. This makes it possible to use it for other purposes with slight variations. For example, for merging heaps after branching. 
 
 \section{Conclusions}
 
-The primary target of this algorithm is Liquid Java, but it is general enough to be used in other projects relying on SMT solvers to verify symbolic execution steps. The primary benefit of this algorithm is simplicity and delegation of responsibility for separation logic handling to the SMT solver instead of a symbolic execution engine which is usually implemented separately for each tool. 
+One big advantage of this approach is that the SMT solver algorithm for separation logic is decidable. In contrast to Viper which is a notable alternative to writing a symbolic execution engine from scratch. 
 
-We implemented and tested this algorithm for Liquid Java, preliminary results are encouraging feature- and performance-wise. 
+The simplicity and decidability come with the cost of features that are possible to support. Viper is a much more mature and rich backend for the language, while the presented approach is capped by the capabilities of separation logic support in SMT solver. Said capabilities are defined by GRASS fragment of separation logic which looks like "propositional" separation logic. The main features that are kept unreachable by this limitation are recursive predicates and fractional permissions. 
 
-The performance degradation for synthetic benchmarks is around 30\% relative to the pure boolean version.
+The primary target of this algorithm was Liquid Java, but it is general enough to be used in other projects relying on SMT solvers to verify symbolic execution steps. The primary benefit of this algorithm is simplicity and delegation of responsibility for separation logic handling to the SMT solver instead of a symbolic execution engine which is usually implemented separately for each tool. 
+
+We implemented and tested this algorithm for Liquid Java, preliminary results are encouraging feature- and performance-wise. The prototype supports function calls, conditional branching, and assignments.
+
+The performance degradation for synthetic benchmarks is around 30\% relative to the pure boolean version of Liquid Java.
 
 \bibliographystyle{acm}
 \bibliography{main}
