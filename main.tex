@@ -48,6 +48,7 @@
 
 \documentclass[sigplan,screen,review]{acmart}
 
+
 \usepackage{paper_alcides}
 \usepackage{cleveref}
 \usepackage{pgfplots}
@@ -57,9 +58,9 @@
 \usepgfplotslibrary{fillbetween}
 \usepgflibrary{patterns}
 \usetikzlibrary{patterns}
-
 \usepackage{bussproofs}
 \usepackage{listings}
+\usepackage{bbding}
 %%
 %% \BibTeX command to typeset BibTeX logo in the docs
 \AtBeginDocument{%
@@ -130,7 +131,7 @@
 %%
 %% The "title" command has an optional parameter,
 %% allowing the author to define a "short title" to be used in page headers.
-\title{Implementing Separation Logic using an SMT-backed Frame Rule}
+\title[Implementing Separation Logic using an SMT-backed Frame Rule]{Implementing Separation Logic \\ using an SMT-backed Frame Rule}
 
 %%
 %% The "author" command and its associated commands are used to define
@@ -155,9 +156,11 @@
 %% article.
 \begin{abstract}
 
+\todo{Kirill: register for an ORCID id, and add your email to the author list.}
+
 Symbolic execution is a technique frequently used to reason about code. In symbolic execution, an analyzer keeps track of the program using a representation of the logical state, and validates that state transitions are valid. This verification is often discharged to SMT solvers as queries to the logical state.
 
-Separation Logic is frequently used to express and verify the properties of programs with pointers or references. However, most SMT solvers (like the popular z3~\cite{moura2008z3}) do not support Separation Logic natively. Recently, the CVC5 SMT Solver has introduced partial support for separation logic, which has not yet been integrated into more high-level tools.
+Separation Logic is frequently used to express and verify the properties of programs with pointers or references. However, most SMT solvers (like the popular z3~\cite{DBLP:conf/tacas/MouraB08}) do not support Separation Logic natively. Recently, the CVC5 SMT Solver has introduced partial support for separation logic, which has not yet been integrated into more high-level tools.
 
 This work aims to address this gap, by providing a proof of concept for implementing the Frame Rule using SMT queries in the Symbolic Heap fragment of Separation Logic, as supported by CVC5. We conclude that this encoding can simplify the machinery dealing with separation logic, such as that present in Smallfoot or Verifast.
 
@@ -220,89 +223,83 @@ This work aims to address this gap, by providing a proof of concept for implemen
 \newcommand{\dnormal}[2]{\EM{\mathit{Normal}(#1,#2)}}
 \newcommand{\duniform}[2]{\EM{\mathit{Uniform}(#1,#2)}}
 
+\lstset{mathescape}
+
 \section{Introduction} 
 
 Formal verification is one of the few known ways to ensure that a computer program has the least amount of errors. The idea is to prove that a given program satisfies a specification provided in advance. The language of program specification is usually some logic that fits to describe program behavior. There are many ways to achieve this with varying resource requirements and automation degrees.
 
-One technique employed to verify imperative programs is symbolic execution~\cite{berdine2005symbolic}. Usually, the engine for it is implemented separately for each tool~\cite{berdine2006smallfoot,distefano2008jstar}. SMT solvers are used as oracles to verify that each step of the symbolic execution engine is correct. 
+One technique employed to verify imperative programs is symbolic execution~\cite{berdine2005symbolic}. Usually, the engine for it is implemented separately for each tool~\cite{DBLP:conf/fmco/BerdineCO05,DBLP:conf/oopsla/DistefanoP08}. SMT solvers are used as oracles to verify that each step of the symbolic execution engine is correct. 
 
-Most programs in imperative languages are written in terms of heap manipulation. Separation Logic~\cite{o2019separation} is an extension of Hoare Logic~\cite{hoare1969axiomatic}, frequently used to reason about these types of programs. It introduces some new operations and constants to it alongside a new inference rule called \emph{Frame Rule}. In general, Separation Logic is proved to be undecidable~\cite{brotherston2010undecidability}, but there are decidable subsets.
+Most programs in imperative languages are written in terms of heap manipulation. Separation Logic~\cite{DBLP:journals/cacm/OHearn19} is an extension of Hoare Logic~\cite{DBLP:journals/cacm/Hoare69}, frequently used to reason about these types of programs. It introduces some new operations and constants to it alongside a new inference rule called \emph{Frame Rule}. In general, Separation Logic is proved to be undecidable~\cite{DBLP:conf/lics/BrotherstonK10}, but there are decidable subsets.
 
-In this work, we focus on the \emph{Symbolic Heap} fragment~\cite{berdine2006smallfoot}, as it enables a significant degree of automation by being supported in the CVC5 SMT Solver~\cite{DBLP:conf/tacas/BarbosaBBKLMMMN22}. A simplified Symbolic Heap requires the logical context to be split into a pure boolean part ($BCtx$) and a pure spatial part, made of heaplets ($h_i = p \mapsto v$)
-
-\todo{Change notation}
+In this work, we focus on the \emph{Symbolic Heap} fragment~\cite{DBLP:conf/fmco/BerdineCO05}, as it enables a significant degree of automation by being supported in the CVC5 SMT Solver~\cite{DBLP:conf/tacas/BarbosaBBKLMMMN22}. A simplified Symbolic Heap requires the logical context to be split into a pure boolean part ($BCtx$) and a pure spatial part ($H = emp * h_0 * \dots * h_n$), made of disjoint heaplets ($h_i = p \mapsto v$)
 
 \[
-\texttt{BCtx | emp * h$_0$ *$\dots$* h$_n$}
+\text{BCtx} \wedge \text{emp} * h_0 * \dots* h_n
 \]
 
-where \texttt{h$_i$ = p $\mapsto$ v}
+This simplified version significantly restricts the expressive power of Separation Logic but still permits encoding of some interesting program properties. Thus, we chose it as a starting point, but CVC5 actually supports a larger fragment called GRASS~\cite{DBLP:conf/cav/PiskacWZ13}. In contrast, Z3 does not have any support for separation logic.~\footnote{But it was once prototyped: \url{https://github.com/Z3Prover/z3/issues/811}.} 
 
-This simplified version significantly restricts the expressive power of Separation Logic but still permits encoding of some interesting program properties. Thus, we chose it as a starting point, but CVC5 actually supports a larger fragment called GRASS~\cite{piskac2013automating}. In contrast, Z3 does not have any support for separation logic.~\footnote{But it was once prototyped: \url{https://github.com/Z3Prover/z3/issues/811}.} 
-
-
-
-The goal of this work is to show evidence of an opportunity to shift some heavy lifting related to separation logic from a symbolic execution engine to an SMT solver. For this, we present an algorithm to encode the Frame Rule through SMT Solver queries.
-
-\section{Frame Rule}
-
-The algorithm uses the notion of SMT query that is denoted as follows.
-
-\[
-\texttt{isUNSAT($\neg$query) = true,}
-\]
-
-iff an SMT solver gives the UNSAT result on the negation of the query. This means that for all free variables negation of the query does not hold, which is equivalent to the situation when the query holds for all free variables. 
-
+\begin{figure}
 \begin{prooftree}
     \AxiomC{\texttt{\{pre\} code \{post\}}}
     \RightLabel{Frame rule}
     \UnaryInfC{\texttt{\{pre * frame\} code \{post * frame\}}}
 \end{prooftree}
+\caption{The general definition of the Frame Rule.}
+\label{fig:framerule}
+\end{figure}
 
-The algorithm itself is split into two phases. 
+The goal of this work is to show evidence of the opportunity to shift some heavy lifting related to separation logic from a symbolic execution engine to an SMT solver. For this, we present an algorithm to encode the Frame Rule of Separation Logic (\Cref{fig:framerule}) through SMT Solver queries.
+
+\section{Frame Rule}
+
+\paragraph{Preliminaries} To prove that a formula with universally free variables holds, we query the SMT solver whether the negation of the query, using existentially quantified free variables, is unsatisfiable (\texttt{unsat}). We denote this verification as $\operatorname{isUNSAT}(\neg\mbox{query})$.
+
+
+\paragraph{Algorithm} The algorithm to check the Frame Rule is split into two phases: 
 
 \begin{itemize}
     \item Check if the current context satisfies the precondition
     \item Apply postcondition to the larger context
 \end{itemize}
 
-Pseudocode for the first phase is quite simple. It exploits the idea, that it is possible to encode a heap containing any given one by adding \texttt{* true} to it. 
 
-The outline is that during the first step, it checks if the boolean context, defining pointer equivalence, and the heap imply precondition.
+The first step focus on verifying whether the precondition is guaranteed by the context. The context is composed of the boolean context, including pointer equivalente (e.g., $a=b$) and the heap (e.g., $a \mapsto x, b \mapsto y$). The requirement is composed of the boolean pre-condition (pre), together with any heap ($\text{pre} * \text{true}$).
 
-\begin{lstlisting}[mathescape]
-BCtx | H $\Vdash$ pre 
- $iff$ isUNSAT($\neg$(BCtx $\land$ H $\implies$ pre * true))
-\end{lstlisting}
+\begin{align*}
+\mbox{BCtx} \wedge H \Vdash \mbox{pre} & \, \iff & \\ & \operatorname{isUNSAT}(\neg(\mbox{BCtx} \wedge H \implies \mbox{pre} \mathbin{*} \mbox{true} ))
+\end{align*}
 
-The second phase exploits the same idea. The frame is inferred by checking each pointer for belonging in a frame, by precondition invalidation.
+%\begin{lstlisting}[mathescape]
+%BCtx | H $\Vdash$ pre 
+% $iff$ isUNSAT($\neg$(BCtx $\land$ H $\implies$ pre * true))
+%\end{lstlisting}
 
-\begin{lstlisting}[mathescape]
-//BCtx | H - callsite context
-//H = h$_0$ * $\dots$ * h$_{n - 1}$
-frame = H.filter($\lambda$ h. 
-               let c = pre * h * true 
-               in  BCtx | H $\Vdash$ c)
-            .fold(emp, *)
-//BCtx | pre * frame - result
-\end{lstlisting}
 
-The unfortunate consequence of this approach is a performance hit. Usually, the systems that are using SMT solvers need only \texttt{O(1)} SMT queries to make the symbolic execution step, but this algorithm does it in \texttt{O(size(H))} queries. 
+The second step selects the relevant parts of the frame to be kept in the outgoing context, by discarding all heaplets that invalidates the precondition. In particular, for the incoming context $S_{in} = \mbox{BCtx} \wedge H_{in} $, we will generate the outgoing context $S_{out} = (\text{BCtx} \wedge \text{post}) \wedge H_{out} $.
 
-If examined more closely, this algorithm is not exactly doing frame rule application, but rather heap reconstruction. It will discard every heaplet that invalidates precondition and the remainder will be the result. This makes it possible to use it for other purposes with slight variations. For example, for merging heaps after branching. 
+
+\begin{align*}
+H_{out} = \* \{ h_i  \,|\, h_i \in H_{in}, \mbox{BCtx} \wedge H \Vdash \mbox{pre} \mathbin{*} h_i  \mathbin{*} \text{true} \}
+\end{align*}
+
+$H_{out}$ is the separating conjunction of all the heaplets from the incoming context that are not invalidated by the precondition. From this heap reconstruction, we can build the complete outgoing context $S_{out}$. The heap reconstruction process can be used in other contexts, such as merging heaps after branches.
+
+When compared to other SMT-based Separation Logic approach, such as Implicit Dynamic Frames, our approach takes \texttt{O(size(H))} queries from decidable logics, instead of the \texttt{O(1)} queries in undecidable logics. This approach presents another alternative in the design space between guarantee of results versus performance.
+
+\paragraph{Evaluation} We validated the feasibility of this approach by implementing it in the \href{https://catarinagamboa.github.io/liquidjava.html}{Liquid Java} compiler, supporting function calls, conditional branching, and assignments. The performance degradation for synthetic benchmarks is around 30\% relative to the pure boolean version of Liquid Java.
+
 
 \section{Conclusions}
 
-One big advantage of this approach is that the SMT solver algorithm for separation logic is decidable. In contrast to Viper~\cite{muller2016viper} which is a main alternative to writing a symbolic execution engine from scratch. 
+The big advantage of this approach is that the SMT solver algorithm for separation logic is decidable. This is different than other approaches, such as Viper~\cite{DBLP:conf/vmcai/0001SS16}, which have their own internal infrastructure for implementing the frame rule.
 
-The simplicity and decidability come with the cost of features that are possible to support. Viper is a much more mature and rich backend for the language, while the presented approach is capped by the capabilities of separation logic support in SMT solver. Said capabilities are defined by GRASS fragment of separation logic which looks like "propositional" separation logic. The main features that are kept unreachable by this limitation are recursive predicates and fractional permissions~\cite{boyland2003checking}. 
+The simplicity and decidability come with the cost of features that are possible to support. Viper is a much more mature and rich backend for the language, while the presented approach is capped by the capabilities of separation logic support in SMT solver. Said capabilities are defined by GRASS fragment of separation logic which looks like ``propositional'' separation logic. The main features that are kept unreachable by this limitation are recursive predicates and fractional permissions~\cite{DBLP:conf/sas/Boyland03}. 
 
-The primary target of this algorithm was Liquid Java~\cite{gamboa2021user}, but it is general enough to be used in other projects relying on SMT solvers to verify symbolic execution steps. The primary benefit of this algorithm is simplicity and delegation of responsibility for separation logic handling to the SMT solver instead of a symbolic execution engine which is usually implemented separately for each tool. 
+While our validation was in the specific context of Liquid Java~\cite{gamboa2021user}, but it is general enough to be used in other projects relying on SMT solvers to verify symbolic execution steps. The primary benefit of this algorithm is simplicity and delegation of responsibility for separation logic handling to the SMT solver instead of a symbolic execution engine which is usually implemented separately for each tool. 
 
-We implemented and tested~\footnote{https://github.com/CatarinaGamboa/liquidjava/pull/20} this algorithm for Liquid Java, preliminary results are encouraging feature- and performance-wise. The prototype supports function calls, conditional branching, and assignments.
-
-The performance degradation for synthetic benchmarks is around 30\% relative to the pure boolean version of Liquid Java.
 
 \bibliographystyle{acm}
 \bibliography{main}
