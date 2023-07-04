@@ -235,7 +235,7 @@ Most programs in imperative languages are written in terms of heap manipulation.
 In this work, we focus on the \emph{Symbolic Heap} fragment~\cite{DBLP:conf/fmco/BerdineCO05}, as it enables a significant degree of automation by being supported in the CVC5 SMT Solver~\cite{DBLP:conf/tacas/BarbosaBBKLMMMN22}. A simplified Symbolic Heap requires the logical context to be split into a pure boolean part ($\mbox{BCtx}$) and a pure spatial part ($H = emp * h_0 * \dots * h_n$), made of disjoint heaplets ($h_i = p \mapsto v$)
 
 \[
-\text{BCtx} \wedge \text{emp} * h_0 * \dots* h_n
+\text{BCtx} \wedge \text{emp} * h_0 * \dots * h_n
 \]
 
 This simplified version significantly restricts the expressive power of Separation Logic but still permits encoding of some interesting program properties. Thus, we chose it as a starting point, but CVC5 actually supports a larger fragment called GRASS~\cite{DBLP:conf/cav/PiskacWZ13}. In contrast, Z3 does not have any support for separation logic.~\footnote{But it was once prototyped: \url{https://github.com/Z3Prover/z3/issues/811}.} 
@@ -265,7 +265,7 @@ The goal of this work is to show evidence of the opportunity to shift some heavy
 \end{itemize}
 
 
-The first step focus on verifying whether the precondition is guaranteed by the context. The context is composed of the pure boolean context($\mbox{BCtx}$), including pointer equivalente (e.g., $a=b$) and the heap (e.g., $a \mapsto x * b \mapsto y$). The requirement is any heap, containing precondition: ($\text{pre} * \text{true}$).
+The first step focus on verifying whether the precondition is guaranteed by the context. The context is composed of the pure boolean context($\mbox{BCtx}$), including pointer equivalente (e.g., $a=b$) and the heap (e.g., $a \mapsto x * b \mapsto y$). The requirement is any heap, containing precondition: $\text{pre} * \text{true}$.
 
 \begin{align*}
 \mbox{BCtx} \wedge H \Vdash \mbox{pre} & \, \iff & \\ & \operatorname{isUNSAT}(\neg(\mbox{BCtx} \wedge H \implies \mbox{pre} \mathbin{*} \mbox{true} ))
@@ -280,9 +280,9 @@ The first step focus on verifying whether the precondition is guaranteed by the 
 The second step isolates the unchanged part of the heap, called $\mbox{frame}$, to be kept in the outgoing context, by discarding all heaplets that invalidates the precondition. In particular, for the incoming context $S_{in} = \mbox{BCtx} \wedge H_{in} = \mbox{BCtx} \wedge (\text{pre} * \text{frame})$, we will generate the outgoing context $S_{out} = \text{BCtx} \wedge H_{out} = \text{BCtx} \wedge (\text{post} * \text{frame})$. 
 
 \begin{align*}
-&H_{in} = h_1 * \dots * h_n\\
-&\text{frame} = \* \{ h_i  \,|\, i \in 1\dots n,\, \mbox{BCtx} \wedge H_{in} \Vdash \mbox{pre} \mathbin{*} h_i  \mathbin{*} \text{true} \}\\
-&H_{out} = post * \prod_{h_j \in frame} h_j
+&H_{in} = h_1 \mathbin{*} \dots \mathbin{*} h_n\\
+&frame = \* \{ h_i  \,|\, i \in 1\dots n,\, \mbox{BCtx} \wedge H_{in} \Vdash \mbox{pre} \mathbin{*} h_i  \mathbin{*} \text{true} \}\\
+&H_{out} = \text{post} \mathbin{*} \prod_{h_j \in frame} h_j = \text{post} \mathbin{*} \text{frame}
 \end{align*}
 
 Where $\prod$ is used with respect to separating conjunction. From this heap reconstruction, we can build the complete outgoing context $S_{out}$. The heap reconstruction process can be used in other contexts, such as merging heaps after conditional branching.
@@ -298,7 +298,7 @@ When compared to other SMT-based Separation Logic approach, such as Implicit Dyn
 
 The big advantage of this approach is that the SMT solver algorithm for separation logic is decidable. This is different than other approaches, such as Viper~\cite{DBLP:conf/vmcai/0001SS16}, which have their own internal infrastructure for implementing the frame rule.
 
-\todo{Viper does not implement frame rule at all}
+\todo{I suspect that Viper does not implement frame rule}
 
 The simplicity and decidability come with the cost of features that are possible to support. Viper is a much more mature and rich backend for the language, while the presented approach is capped by the capabilities of separation logic support in SMT solver. Said capabilities are defined by GRASS fragment of separation logic which looks like ``propositional'' separation logic. The main features that are kept unreachable by this limitation are recursive predicates and fractional permissions~\cite{DBLP:conf/sas/Boyland03}. 
 
