@@ -140,8 +140,9 @@
 %% "authornote" and "authornotemark" commands
 %% used to denote shared contribution to the research.
 \author{Kirill Golubev}
-%\email{trovato@corporation.com}
-% TODO: \orcid{1234-5678-9012}
+\email{gkigorevich@ciencias.ulisboa.pt}
+\orcid{0009-0002-2709-5241}
+
 \author{Alcides Fonseca}
 \email{alcides@ciencias.ulisboa.pt}
 \orcid{0000-0002-0879-4015}
@@ -155,8 +156,6 @@
 %% The abstract is a short summary of the work to be presented in the
 %% article.
 \begin{abstract}
-
-\todo{Kirill: register for an ORCID id, and add your email to the author list.}
 
 Symbolic execution is a technique frequently used to reason about code. In symbolic execution, an analyzer keeps track of the program using a representation of the logical state, and validates that state transitions are valid. This verification is often discharged to SMT solvers as queries to the logical state.
 
@@ -233,7 +232,7 @@ One technique employed to verify imperative programs is symbolic execution~\cite
 
 Most programs in imperative languages are written in terms of heap manipulation. Separation Logic~\cite{DBLP:journals/cacm/OHearn19} is an extension of Hoare Logic~\cite{DBLP:journals/cacm/Hoare69}, frequently used to reason about these types of programs. It introduces some new operations and constants to it alongside a new inference rule called \emph{Frame Rule}. In general, Separation Logic is proved to be undecidable~\cite{DBLP:conf/lics/BrotherstonK10}, but there are decidable subsets.
 
-In this work, we focus on the \emph{Symbolic Heap} fragment~\cite{DBLP:conf/fmco/BerdineCO05}, as it enables a significant degree of automation by being supported in the CVC5 SMT Solver~\cite{DBLP:conf/tacas/BarbosaBBKLMMMN22}. A simplified Symbolic Heap requires the logical context to be split into a pure boolean part ($BCtx$) and a pure spatial part ($H = emp * h_0 * \dots * h_n$), made of disjoint heaplets ($h_i = p \mapsto v$)
+In this work, we focus on the \emph{Symbolic Heap} fragment~\cite{DBLP:conf/fmco/BerdineCO05}, as it enables a significant degree of automation by being supported in the CVC5 SMT Solver~\cite{DBLP:conf/tacas/BarbosaBBKLMMMN22}. A simplified Symbolic Heap requires the logical context to be split into a pure boolean part ($\mbox{BCtx}$) and a pure spatial part ($H = emp * h_0 * \dots * h_n$), made of disjoint heaplets ($h_i = p \mapsto v$)
 
 \[
 \text{BCtx} \wedge \text{emp} * h_0 * \dots* h_n
@@ -266,7 +265,7 @@ The goal of this work is to show evidence of the opportunity to shift some heavy
 \end{itemize}
 
 
-The first step focus on verifying whether the precondition is guaranteed by the context. The context is composed of the boolean context, including pointer equivalente (e.g., $a=b$) and the heap (e.g., $a \mapsto x, b \mapsto y$). The requirement is composed of the boolean pre-condition (pre), together with any heap ($\text{pre} * \text{true}$).
+The first step focus on verifying whether the precondition is guaranteed by the context. The context is composed of the pure boolean context($\mbox{BCtx}$), including pointer equivalente (e.g., $a=b$) and the heap (e.g., $a \mapsto x * b \mapsto y$). The requirement is any heap, containing precondition: ($\text{pre} * \text{true}$).
 
 \begin{align*}
 \mbox{BCtx} \wedge H \Vdash \mbox{pre} & \, \iff & \\ & \operatorname{isUNSAT}(\neg(\mbox{BCtx} \wedge H \implies \mbox{pre} \mathbin{*} \mbox{true} ))
@@ -278,16 +277,19 @@ The first step focus on verifying whether the precondition is guaranteed by the 
 %\end{lstlisting}
 
 
-The second step selects the relevant parts of the frame to be kept in the outgoing context, by discarding all heaplets that invalidates the precondition. In particular, for the incoming context $S_{in} = \mbox{BCtx} \wedge H_{in} $, we will generate the outgoing context $S_{out} = (\text{BCtx} \wedge \text{post}) \wedge H_{out} $.
-
+The second step isolates the unchanged part of the heap, called $\mbox{frame}$, to be kept in the outgoing context, by discarding all heaplets that invalidates the precondition. In particular, for the incoming context $S_{in} = \mbox{BCtx} \wedge H_{in} = \mbox{BCtx} \wedge (\text{pre} * \text{frame})$, we will generate the outgoing context $S_{out} = \text{BCtx} \wedge H_{out} = \text{BCtx} \wedge (\text{post} * \text{frame})$. 
 
 \begin{align*}
-H_{out} = \* \{ h_i  \,|\, h_i \in H_{in}, \mbox{BCtx} \wedge H \Vdash \mbox{pre} \mathbin{*} h_i  \mathbin{*} \text{true} \}
+&H_{in} = h_1 * \dots * h_n\\
+&\text{frame} = \* \{ h_i  \,|\, i \in 1\dots n,\, \mbox{BCtx} \wedge H_{in} \Vdash \mbox{pre} \mathbin{*} h_i  \mathbin{*} \text{true} \}\\
+&H_{out} = post * \prod_{h_j \in frame} h_j
 \end{align*}
 
-$H_{out}$ is the separating conjunction of all the heaplets from the incoming context that are not invalidated by the precondition. From this heap reconstruction, we can build the complete outgoing context $S_{out}$. The heap reconstruction process can be used in other contexts, such as merging heaps after branches.
+Where $\prod$ is used with respect to separating conjunction. From this heap reconstruction, we can build the complete outgoing context $S_{out}$. The heap reconstruction process can be used in other contexts, such as merging heaps after conditional branching.
 
 When compared to other SMT-based Separation Logic approach, such as Implicit Dynamic Frames, our approach takes \texttt{O(size(H))} queries from decidable logics, instead of the \texttt{O(1)} queries in undecidable logics. This approach presents another alternative in the design space between guarantee of results versus performance.
+
+\todo{I think it is better to have concrete examples. I have no evidence that undecidablitiy is connected with O(1) queries per frame rule invlocation}
 
 \paragraph{Evaluation} We validated the feasibility of this approach by implementing it in the \href{https://catarinagamboa.github.io/liquidjava.html}{Liquid Java} compiler, supporting function calls, conditional branching, and assignments. The performance degradation for synthetic benchmarks is around 30\% relative to the pure boolean version of Liquid Java.
 
@@ -295,6 +297,8 @@ When compared to other SMT-based Separation Logic approach, such as Implicit Dyn
 \section{Conclusions}
 
 The big advantage of this approach is that the SMT solver algorithm for separation logic is decidable. This is different than other approaches, such as Viper~\cite{DBLP:conf/vmcai/0001SS16}, which have their own internal infrastructure for implementing the frame rule.
+
+\todo{Viper does not implement frame rule at all}
 
 The simplicity and decidability come with the cost of features that are possible to support. Viper is a much more mature and rich backend for the language, while the presented approach is capped by the capabilities of separation logic support in SMT solver. Said capabilities are defined by GRASS fragment of separation logic which looks like ``propositional'' separation logic. The main features that are kept unreachable by this limitation are recursive predicates and fractional permissions~\cite{DBLP:conf/sas/Boyland03}. 
 
