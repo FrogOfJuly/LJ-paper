@@ -61,6 +61,12 @@
 \usepackage{bussproofs}
 \usepackage{listings}
 \usepackage{bbding}
+
+\usepackage[framemethod=tikz]{mdframed}
+
+\definecolor{mycolor}{rgb}{0.122, 0.435, 0.698}
+
+\newmdenv[innerlinewidth=0.5pt, roundcorner=4pt,linecolor=mycolor,innerleftmargin=6pt, innerrightmargin=6pt,innertopmargin=6pt,innerbottommargin=6pt]{prittybox}
 %%
 %% \BibTeX command to typeset BibTeX logo in the docs
 \AtBeginDocument{%
@@ -73,8 +79,8 @@
 %% the commands and values with those provided to you when you
 %% complete the rights form.
 \setcopyright{acmcopyright}
-\copyrightyear{2018}
-\acmYear{2018}
+\copyrightyear{2023}
+\acmYear{2023}
 \acmDOI{XXXXXXX.XXXXXXX}
 
 %% These commands are for a PROCEEDINGS abstract or paper.
@@ -157,7 +163,7 @@
 %% article.
 \begin{abstract}
 
-Symbolic execution is a technique frequently used to reason about code. In symbolic execution, an analyzer keeps track of the program using a representation of the logical state, and validates that state transitions are valid. This verification is often discharged to SMT solvers as queries to the logical state.
+Symbolic execution is a technique frequently used to reason about code. In symbolic execution, an analyzer keeps track of the program state using a its logic representation, and validates that state transitions are valid. This verification is often discharged to SMT solvers as queries to the logical state.
 
 Separation Logic is frequently used to express and verify the properties of programs with pointers or references. However, most SMT solvers (like the popular Z3) do not support Separation Logic natively. Recently, the CVC5 SMT Solver has introduced partial support for separation logic, which has not yet been integrated into more high-level tools.
 
@@ -171,33 +177,27 @@ This work aims to address this gap, by providing a proof of concept for implemen
 %%
 \begin{CCSXML}
 <ccs2012>
- <concept>
-  <concept_id>10010520.10010553.10010562</concept_id>
-  <concept_desc>Computer systems organization~Embedded systems</concept_desc>
-  <concept_significance>500</concept_significance>
- </concept>
- <concept>
-  <concept_id>10010520.10010575.10010755</concept_id>
-  <concept_desc>Computer systems organization~Redundancy</concept_desc>
-  <concept_significance>300</concept_significance>
- </concept>
- <concept>
-  <concept_id>10010520.10010553.10010554</concept_id>
-  <concept_desc>Computer systems organization~Robotics</concept_desc>
-  <concept_significance>100</concept_significance>
- </concept>
- <concept>
-  <concept_id>10003033.10003083.10003095</concept_id>
-  <concept_desc>Networks~Network reliability</concept_desc>
-  <concept_significance>100</concept_significance>
- </concept>
+<concept>
+<concept_id>10003752.10003790.10011742</concept_id>
+<concept_desc>Theory of computation~Separation logic</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10003752.10003790.10011742</concept_id>
+<concept_desc>Theory of computation~Separation logic</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10002944.10011123.10011676</concept_id>
+<concept_desc>General and reference~Verification</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
 </ccs2012>
 \end{CCSXML}
 
-\ccsdesc[500]{Computer systems organization~Embedded systems}
-\ccsdesc[300]{Computer systems organization~Redundancy}
-\ccsdesc{Computer systems organization~Robotics}
-\ccsdesc[100]{Networks~Network reliability}
+\ccsdesc[500]{Theory of computation~Separation logic}
+\ccsdesc[500]{Theory of computation~Separation logic}
+\ccsdesc[300]{General and reference~Verification}
 
 
 \received{20 February 2007}
@@ -228,31 +228,44 @@ This work aims to address this gap, by providing a proof of concept for implemen
 
 Formal verification is one of the few known ways to ensure that a computer program has the least amount of errors. The idea is to prove that a given program satisfies a specification provided in advance. The language of program specification is usually some logic that fits to describe program behavior. There are many ways to achieve this with varying resource requirements and automation degrees.
 
-One technique employed to verify imperative programs is symbolic execution~\cite{berdine2005symbolic}. Usually, the engine for it is implemented separately for each tool~\cite{DBLP:conf/fmco/BerdineCO05,DBLP:conf/oopsla/DistefanoP08}. SMT solvers are used as oracles to verify that each step of the symbolic execution engine is correct. 
+One technique employed to verify imperative programs is symbolic execution~\cite{berdine2005symbolic}. Usually, the engine for it is implemented separately for each tool~\cite{DBLP:conf/fmco/BerdineCO05,DBLP:conf/oopsla/DistefanoP08}. In this context SMT solvers are used as oracles to verify that each step of the symbolic execution engine is correct. 
 
 Most programs in imperative languages are written in terms of heap manipulation. Separation Logic~\cite{DBLP:journals/cacm/OHearn19} is an extension of Hoare Logic~\cite{DBLP:journals/cacm/Hoare69}, frequently used to reason about these types of programs. It introduces some new operations and constants to it alongside a new inference rule called \emph{Frame Rule}. In general, Separation Logic is proved to be undecidable~\cite{DBLP:conf/lics/BrotherstonK10}, but there are decidable subsets.
 
-In this work, we focus on the \emph{Symbolic Heap} fragment~\cite{DBLP:conf/fmco/BerdineCO05}, as it enables a significant degree of automation by being supported in the CVC5 SMT Solver~\cite{DBLP:conf/tacas/BarbosaBBKLMMMN22}. A simplified Symbolic Heap requires the logical context to be split into a pure boolean part ($\mbox{BCtx}$) and a pure spatial part ($H = emp * h_0 * \dots * h_n$), made of disjoint heaplets ($h_i = p \mapsto v$)
-
-\[
-\text{BCtx} \wedge \text{emp} * h_0 * \dots * h_n
-\]
+In this work, we focus on the \emph{Symbolic Heap} fragment~\cite{DBLP:conf/fmco/BerdineCO05}, as it enables a significant degree of automation by being supported in the CVC5 SMT Solver~\cite{DBLP:conf/tacas/BarbosaBBKLMMMN22}. A simplified Symbolic Heap requires the logical context to be split into a pure boolean part and a pure spatial part , made of disjoint heaplets. See \Cref{fig:framerule} for details.
 
 This simplified version significantly restricts the expressive power of Separation Logic but still permits encoding of some interesting program properties. Thus, we chose it as a starting point, but CVC5 actually supports a larger fragment called GRASS~\cite{DBLP:conf/cav/PiskacWZ13}. In contrast, Z3\cite{DBLP:conf/tacas/MouraB08} does not have any support for separation logic.~\footnote{But it was once prototyped: \url{https://github.com/Z3Prover/z3/issues/811}.} 
 
 \begin{figure}
+\begin{prittybox}
+\begin{align*}
+    &\texttt{x, y, $\dots$} \in Variables &&\text{variables}\\
+    &\texttt{$\alpha$, $\beta$, $\dots$} \in Values &&\text{values}\\
+    &\texttt{S := true | x $\mapsto \alpha$} &&\text{simple spatial formula}\\
+    &\texttt{$\Sigma$ := emp | S * $\Sigma$} &&\text{spatial formula}\\
+    &\Pi \land \Sigma &&\text{simplified symbolic heap}
+\end{align*}
+
 \begin{prooftree}
     \AxiomC{\texttt{\{pre\} code \{post\}}}
-    \RightLabel{Frame rule}
+    \RightLabel{FR}
     \UnaryInfC{\texttt{\{pre * frame\} code \{post * frame\}}}
 \end{prooftree}
-\caption{The general definition of the Frame Rule.}
+\caption{Simplified symbolic heap fragment of separation logic}
+\end{prittybox}
+
 \label{fig:framerule}
 \end{figure}
 
-The goal of this work is to show evidence of the opportunity to shift some heavy lifting related to separation logic from a symbolic execution engine to an SMT solver. For this, we present an algorithm to encode the Frame Rule of Separation Logic (\Cref{fig:framerule}) through SMT Solver queries.
+
+The goal of this work is to highlight the opportunity to shift some heavy lifting related to separation logic from a symbolic execution engine to an SMT solver. For this, we present an algorithm to encode the Frame Rule of Separation Logic (~\Cref{fig:framerule}) through SMT Solver queries.
+
+\todo{elaborate on machinery}
 
 \section{Frame Rule}
+
+\todo{Make this section more clear}
+
 
 \paragraph{Preliminaries} To prove that a formula with universally free variables holds, we query the SMT solver whether the negation of the query, using existentially quantified free variables, is unsatisfiable (\texttt{unsat}). We denote this verification as $\operatorname{isUNSAT}(\neg\mbox{query})$.
 
@@ -265,7 +278,7 @@ The goal of this work is to show evidence of the opportunity to shift some heavy
 \end{itemize}
 
 
-The first step focus on verifying whether the precondition is guaranteed by the context. The context is composed of the pure boolean context($\mbox{BCtx}$), including pointer equivalente (e.g., $a=b$) and the heap (e.g., $a \mapsto x * b \mapsto y$). The requirement is any heap, containing precondition: $\text{pre} * \text{true}$.
+The first step focus on verifying whether the precondition is guaranteed by the context. The context is composed of the pure boolean context($\mbox{BCtx}$), including pointer equivalence (e.g., $a=b$) and the heap (e.g., $a \mapsto x * b \mapsto y$). The requirement is any heap, containing precondition: $\text{pre} * \text{true}$.
 
 \begin{align*}
 \mbox{BCtx} \wedge H \Vdash \mbox{pre} & \, \iff & \\ & \operatorname{isUNSAT}(\neg(\mbox{BCtx} \wedge H \implies \mbox{pre} \mathbin{*} \mbox{true} ))
@@ -291,10 +304,14 @@ When compared to other SMT-based verification procedures, our approach brings an
 
 \paragraph{Evaluation} We validated the feasibility of this approach by implementing it in the \href{https://catarinagamboa.github.io/liquidjava.html}{Liquid Java} compiler, supporting function calls, conditional branching, and assignments. The performance degradation for synthetic benchmarks is around 30\% relative to the pure boolean version of Liquid Java.
 
+\todo{maybe mention benchmarking details?}
+
 
 \section{Conclusions}
 
 The big advantage of this approach is that the SMT solver algorithm for separation logic is decidable, in contrast to Viper\cite{DBLP:conf/vmcai/0001SS16}, which is a popular backend for implementing reasoning in some ownership logic. In contrast to GRASShopper\cite{piskac2014grasshopper}, verification project with decidable inference algorithm, our approach provides much more lightweight path to incorporating it to some existing tool. Another contribution of present work is that it explores poorly utilized capabilities of native separation logic support in SMT solvers. 
+
+\todo{elaborate on "some existing tool"}
 
 The simplicity and decidability come with the cost of features that are possible to support. Viper is a much more mature and rich backend for the language, while the presented approach is capped by the capabilities of separation logic support in SMT solver. Said capabilities are defined by GRASS fragment of separation logic which looks like ``propositional'' separation logic. The main features that are kept unreachable by this limitation are recursive predicates and fractional permissions~\cite{DBLP:conf/sas/Boyland03}. 
 
