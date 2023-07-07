@@ -159,7 +159,7 @@
 
 Symbolic execution is a technique frequently used to reason about code. In symbolic execution, an analyzer keeps track of the program using a representation of the logical state, and validates that state transitions are valid. This verification is often discharged to SMT solvers as queries to the logical state.
 
-Separation Logic is frequently used to express and verify the properties of programs with pointers or references. However, most SMT solvers (like the popular z3~\cite{DBLP:conf/tacas/MouraB08}) do not support Separation Logic natively. Recently, the CVC5 SMT Solver has introduced partial support for separation logic, which has not yet been integrated into more high-level tools.
+Separation Logic is frequently used to express and verify the properties of programs with pointers or references. However, most SMT solvers (like the popular Z3) do not support Separation Logic natively. Recently, the CVC5 SMT Solver has introduced partial support for separation logic, which has not yet been integrated into more high-level tools.
 
 This work aims to address this gap, by providing a proof of concept for implementing the Frame Rule using SMT queries in the Symbolic Heap fragment of Separation Logic, as supported by CVC5. We conclude that this encoding can simplify the machinery dealing with separation logic, such as that present in Smallfoot or Verifast.
 
@@ -238,7 +238,7 @@ In this work, we focus on the \emph{Symbolic Heap} fragment~\cite{DBLP:conf/fmco
 \text{BCtx} \wedge \text{emp} * h_0 * \dots * h_n
 \]
 
-This simplified version significantly restricts the expressive power of Separation Logic but still permits encoding of some interesting program properties. Thus, we chose it as a starting point, but CVC5 actually supports a larger fragment called GRASS~\cite{DBLP:conf/cav/PiskacWZ13}. In contrast, Z3 does not have any support for separation logic.~\footnote{But it was once prototyped: \url{https://github.com/Z3Prover/z3/issues/811}.} 
+This simplified version significantly restricts the expressive power of Separation Logic but still permits encoding of some interesting program properties. Thus, we chose it as a starting point, but CVC5 actually supports a larger fragment called GRASS~\cite{DBLP:conf/cav/PiskacWZ13}. In contrast, Z3\cite{DBLP:conf/tacas/MouraB08} does not have any support for separation logic.~\footnote{But it was once prototyped: \url{https://github.com/Z3Prover/z3/issues/811}.} 
 
 \begin{figure}
 \begin{prooftree}
