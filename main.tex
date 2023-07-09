@@ -284,7 +284,7 @@ The goal of this work is to highlight the opportunity to shift some heavy liftin
 The first step focus on verifying whether the precondition is guaranteed by the context. The context is composed of the pure boolean context($\mbox{BCtx}$), including pointer equivalence (e.g., $a=b$) and the heap (e.g., $a \mapsto x * b \mapsto y$). The requirement is any heap, containing precondition: $\text{pre} * \text{true}$.
 
 \begin{align*}
-\mbox{BCtx} \wedge H \Vdash \mbox{pre} & \, \iff & \\ & \operatorname{isUNSAT}(\neg(\mbox{BCtx} \wedge H \implies \mbox{pre} \mathbin{*} \mbox{true} ))
+\mbox{BCtx} \wedge H \Vdash_{SMT} \mbox{pre} & \, \iff & \\ & \operatorname{isUNSAT}(\neg(\mbox{BCtx} \wedge H \implies \mbox{pre} \mathbin{*} \mbox{true} ))
 \end{align*}
 
 %\begin{lstlisting}[mathescape]
@@ -297,7 +297,7 @@ The second step isolates the unchanged part of the heap, called $\mbox{frame}$, 
 
 \begin{align*}
 &H_{in} = h_1 \mathbin{*} \dots \mathbin{*} h_n\\
-&frame = \* \{ h_i  \,|\, i \in 1\dots n,\, \mbox{BCtx} \wedge H_{in} \Vdash \mbox{pre} \mathbin{*} h_i  \mathbin{*} \text{true} \}\\
+&frame = \* \{ h_i  \,|\, i \in 1\dots n,\, \mbox{BCtx} \wedge H_{in} \Vdash_{SMT} \mbox{pre} \mathbin{*} h_i  \mathbin{*} \text{true} \}\\
 &H_{out} = \text{post} \mathbin{*} \prod_{h_j \in frame} h_j = \text{post} \mathbin{*} \text{frame}
 \end{align*}
 
@@ -316,9 +316,9 @@ The big advantage of this approach is that the SMT solver algorithm for separati
 
 \todo{elaborate on "some existing tool"}
 
-The simplicity and decidability come with the cost of features that are possible to support. Viper is a much more mature and rich backend for the language, while the presented approach is capped by the capabilities of separation logic support in SMT solver. Said capabilities are defined by GRASS fragment of separation logic which looks like ``propositional'' separation logic. The main features that are kept unreachable by this limitation are recursive predicates and fractional permissions~\cite{DBLP:conf/sas/Boyland03}. 
+The simplicity and decidability come with the cost of features that are possible to support. Viper is a much more mature and rich backend for the language, while the presented approach is capped by the capabilities of separation logic support in SMT solver. Said capabilities are defined by GRASS fragment of separation logic which looks like ``propositional'' separation logic. The feature that is particularly challenging to support is fractional permissions~\cite{DBLP:conf/sas/Boyland03}. 
 
-While our validation was in the specific context of Liquid Java~\cite{gamboa2021user}, it is general enough to be used in other projects relying on SMT solvers to verify symbolic execution steps. The primary benefit of this algorithm is simplicity and delegation of responsibility for separation logic handling to the SMT solver instead of a symbolic execution engine which is usually implemented separately for each tool. 
+While our validation was in the specific context of Liquid Java~\cite{gamboa2021user}\footnote{\url{https://github.com/CatarinaGamboa/liquidjava/pull/20}}, it is general enough to be used in other projects relying on SMT solvers to verify symbolic execution steps. The primary benefit of this algorithm is simplicity and delegation of responsibility for separation logic handling to the SMT solver instead of a symbolic execution engine which is usually implemented separately for each tool. 
 
 
 \bibliographystyle{acm}
