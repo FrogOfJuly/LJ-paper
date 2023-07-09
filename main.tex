@@ -228,13 +228,13 @@ This work aims to address this gap, by providing a proof of concept for implemen
 
 Formal verification is one of the few known ways to ensure that a computer program has the least amount of errors. The idea is to prove that a given program satisfies a specification provided in advance. The language of program specification is usually some logic that fits to describe program behavior. There are many ways to achieve this with varying resource requirements and automation degrees.
 
-One technique employed to verify imperative programs is symbolic execution~\cite{berdine2005symbolic}. Usually, the engine for it is implemented separately for each tool~\cite{DBLP:conf/fmco/BerdineCO05,DBLP:conf/oopsla/DistefanoP08}. In this context SMT solvers are used as oracles to verify that each step of the symbolic execution engine is correct. 
+One technique employed to verify imperative programs is symbolic execution~\cite{berdine2005symbolic}. Usually, the engine for it is implemented separately for each tool~\cite{DBLP:conf/fmco/BerdineCO05,DBLP:conf/oopsla/DistefanoP08}. In the context of this work, state of symbolic executor can be represented as logical statement about the program. SMT solvers are used as oracles to verify that each transition of the symbolic execution engine's state is correct. 
 
 Most programs in imperative languages are written in terms of heap manipulation. Separation Logic~\cite{DBLP:journals/cacm/OHearn19} is an extension of Hoare Logic~\cite{DBLP:journals/cacm/Hoare69}, frequently used to reason about these types of programs. It introduces some new operations and constants to it alongside a new inference rule called \emph{Frame Rule}. In general, Separation Logic is proved to be undecidable~\cite{DBLP:conf/lics/BrotherstonK10}, but there are decidable subsets.
 
 In this work, we focus on the \emph{Symbolic Heap} fragment~\cite{DBLP:conf/fmco/BerdineCO05}, as it enables a significant degree of automation by being supported in the CVC5 SMT Solver~\cite{DBLP:conf/tacas/BarbosaBBKLMMMN22}. A simplified Symbolic Heap requires the logical context to be split into a pure boolean part and a pure spatial part , made of disjoint heaplets. See \Cref{fig:framerule} for details.
 
-This simplified version significantly restricts the expressive power of Separation Logic but still permits encoding of some interesting program properties. Thus, we chose it as a starting point, but CVC5 actually supports a larger fragment called GRASS~\cite{DBLP:conf/cav/PiskacWZ13}. In contrast, Z3\cite{DBLP:conf/tacas/MouraB08} does not have any support for separation logic.~\footnote{But it was once prototyped: \url{https://github.com/Z3Prover/z3/issues/811}.} 
+This simplified version significantly restricts the expressive power of Separation Logic but still permits encoding of some interesting program properties. Thus, we chose it as a starting point, but CVC5 actually supports a larger fragment called GRASS~\cite{DBLP:conf/cav/PiskacWZ13}\footnote{Actually, GRASS is a fragment of first-order logic which hosts the decidable fragment of separation logic. We will further use GRASS as a name for the decidable separation logic fragment for convenience.}. In contrast, Z3\cite{DBLP:conf/tacas/MouraB08} does not have any support for separation logic.~\footnote{But it was once prototyped: \url{https://github.com/Z3Prover/z3/issues/811}.} 
 
 \begin{figure}
 \begin{prittybox}
@@ -259,13 +259,16 @@ This simplified version significantly restricts the expressive power of Separati
 
 
 The goal of this work is to highlight the opportunity to shift some heavy lifting related to separation logic from a symbolic execution engine to an SMT solver. For this, we present an algorithm to encode the Frame Rule of Separation Logic (~\Cref{fig:framerule}) through SMT Solver queries.
-
-\todo{elaborate on machinery}
+\paragraph{Related work}
+\begin{itemize}
+    \item Smallfoot\cite{DBLP:conf/fmco/BerdineCO05} is the first tool to implement verification with symbolic heap fragment of separation logic. Going through the paper one can see that the rules for handling separation logic are complex and there is value in delegating them to dedicated tool, such as SMT solver.
+    \item GRASShopper\cite{piskac2014grasshopper} is a tool, that implements GRASS fragment of separation logic for analyzing C-like language. In contrast to our approach the engine for analysis is implemented from the scratch instead of relying on SMT solver. 
+    \item Verifast\cite{jacobs2011verifast} consumes and produces chunks of the heap relying on SMT proofs of pointer equivalence, which should result in multiplicative amount of SMT queries with respect to symbolic heap size and number of heap chunks in assertion. 
+\end{itemize}
 
 \section{Frame Rule}
 
 \todo{Make this section more clear}
-
 
 \paragraph{Preliminaries} To prove that a formula with universally free variables holds, we query the SMT solver whether the negation of the query, using existentially quantified free variables, is unsatisfiable (\texttt{unsat}). We denote this verification as $\operatorname{isUNSAT}(\neg\mbox{query})$.
 
